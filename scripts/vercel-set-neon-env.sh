@@ -43,6 +43,7 @@ upsert_preview_env DB_SSLMODE require
 upsert_preview_env SESSION_DRIVER array
 upsert_preview_env CACHE_STORE array
 upsert_preview_env QUEUE_CONNECTION sync
+upsert_preview_env VIEW_COMPILED_PATH /tmp/frotacerta/views
 
 cat <<EOF
 

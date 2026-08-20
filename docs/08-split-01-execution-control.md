@@ -58,15 +58,35 @@ Estas pendencias nao bloqueiam a Fase 1 local, mas bloqueiam uso operacional do 
 
 | Item | Status | Motivo |
 | --- | --- | --- |
-| PostgreSQL gerenciado remoto | Pendente | Vercel preview nao possui `DB_*` configurado |
-| Rodar migrations no banco remoto | Pendente | Depende do PostgreSQL gerenciado |
-| Bootstrap admin remoto | Pendente | Depende do PostgreSQL gerenciado |
+| PostgreSQL gerenciado remoto | Concluido | Neon `frotacerta`, branch `production` |
+| Rodar migrations no banco remoto | Concluido | Migrations aplicadas no Neon |
+| Bootstrap admin remoto | Concluido | Admin `getuliomoreira.engsoftware@gmail.com` criado |
+| Deploy preview Vercel | Concluido | `https://frotacerta-gqbostqxv-geevheits-projects.vercel.app` |
+| Validar API remota | Concluido | `/api/health`, `/api/ready` e login retornaram sucesso |
 
 ## Proxima fase autorizada pelo roteiro
 
 Somente depois que o banco remoto for configurado, a Fase 1 podera ser considerada operacional fora do ambiente local.
 
-Depois disso, a proxima etapa do split e:
+Fase 1 operacional fora do ambiente local.
+
+## Fase 2
+
+Escopo exigido pelo split:
+
+| Item | Status | Evidencia |
+| --- | --- | --- |
+| Manutencao preventiva | Em andamento | API inicial de trocas de oleo |
+| Controle de oleo | Implementado inicial | `oil_service_records`, `/api/v1/oil-services`, projecao preditiva |
+| Alertas preventivos | Implementado inicial | `alerts`, `/api/v1/alerts`, alerta de oleo por regra |
+| Insights preventivos | Implementado inicial | `insights`, previsao de troca de oleo |
+| Mission Control de alertas | Implementado inicial | Contadores de alertas abertos por severidade |
+| OS | Implementado inicial | `work_orders`, `/api/v1/work-orders` |
+| Oficinas | Implementado inicial | `suppliers`, `/api/v1/suppliers` |
+| Pecas | Implementado inicial | `inventory_parts`, `/api/v1/inventory-parts` |
+| Estoque | Implementado inicial | `inventory_movements`, baixa por consumo em OS |
+
+Proxima etapa do split:
 
 ```text
 FASE 2

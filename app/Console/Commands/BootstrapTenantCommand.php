@@ -33,6 +33,7 @@ class BootstrapTenantCommand extends Command
             'administration.manage',
             'fleet.manage',
             'documents.manage',
+            'maintenance.manage',
             'mission-control.view',
         ])->map(fn (string $name) => Permission::firstOrCreate(['name' => $name]));
 

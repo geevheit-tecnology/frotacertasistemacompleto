@@ -143,6 +143,7 @@ class PhaseOneApiTest extends TestCase
         $this->assertTrue($admin->hasPermission('administration.manage'));
         $this->assertTrue($admin->hasPermission('fleet.manage'));
         $this->assertTrue($admin->hasPermission('documents.manage'));
+        $this->assertTrue($admin->hasPermission('maintenance.manage'));
         $this->assertTrue($admin->hasPermission('mission-control.view'));
     }
 

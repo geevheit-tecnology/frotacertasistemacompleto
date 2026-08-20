@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Alert;
 use App\Models\Vehicle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class MissionControlController extends Controller
         ]);
 
         $vehicles = Vehicle::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $alerts = Alert::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
 
         return response()->json([
             'fleet' => [
@@ -24,6 +26,12 @@ class MissionControlController extends Controller
                 'stopped' => (clone $vehicles)->where('status', 'STOPPED')->count(),
                 'blocked' => (clone $vehicles)->where('status', 'BLOCKED')->count(),
                 'maintenance' => (clone $vehicles)->where('status', 'MAINTENANCE')->count(),
+            ],
+            'alerts' => [
+                'open' => (clone $alerts)->where('status', 'ABERTO')->count(),
+                'critical' => (clone $alerts)->where('status', 'ABERTO')->where('severity', 'CRITICO')->count(),
+                'high' => (clone $alerts)->where('status', 'ABERTO')->where('severity', 'ALTO')->count(),
+                'medium' => (clone $alerts)->where('status', 'ABERTO')->where('severity', 'MEDIO')->count(),
             ],
         ]);
     }
