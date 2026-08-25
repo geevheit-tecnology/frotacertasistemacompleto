@@ -111,7 +111,8 @@ class PhaseTwoMaintenanceApiTest extends TestCase
             ->getJson('/api/v1/mission-control')
             ->assertOk()
             ->assertJsonPath('alerts.open', 1)
-            ->assertJsonPath('alerts.medium', 1);
+            ->assertJsonPath('alerts.medium', 1)
+            ->assertJsonPath('insights.open', 1);
 
         $alertId = $this->withToken($token)
             ->getJson('/api/v1/alerts?status=ABERTO')
@@ -123,6 +124,18 @@ class PhaseTwoMaintenanceApiTest extends TestCase
             ->patchJson('/api/v1/alerts/'.$alertId, ['status' => 'VISUALIZADO'])
             ->assertOk()
             ->assertJsonPath('status', 'VISUALIZADO');
+
+        $insightId = $this->withToken($token)
+            ->getJson('/api/v1/insights?status=OPEN&type=OIL_SERVICE_FORECAST')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.priority', 60)
+            ->json('data.0.id');
+
+        $this->withToken($token)
+            ->patchJson('/api/v1/insights/'.$insightId, ['status' => 'ACKNOWLEDGED'])
+            ->assertOk()
+            ->assertJsonPath('status', 'ACKNOWLEDGED');
     }
 
     public function test_oil_service_rejects_odometer_above_vehicle_current_odometer(): void

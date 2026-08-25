@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidPrimaryKey;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class AuditLog extends Model
@@ -18,5 +19,14 @@ class AuditLog extends Model
             'before_value' => 'array',
             'after_value' => 'array',
         ];
+    }
+
+    public function scopeTenant(Builder $query, string $companyId, ?string $branchId = null): Builder
+    {
+        $query->where('company_id', $companyId);
+        if ($branchId !== null) {
+            $query->where('branch_id', $branchId);
+        }
+        return $query;
     }
 }
