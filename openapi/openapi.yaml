@@ -695,6 +695,32 @@ paths:
       responses:
         "200":
           description: Execucoes paginadas
+  /v1/rule-executions/{id}/approve:
+    post:
+      summary: Aprova execucao de regra aguardando aprovacao e aplica acoes criticas
+      tags: [Workflow]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UuidId"
+      responses:
+        "200":
+          description: Execucao aprovada
+        "422":
+          description: Execucao nao esta aguardando aprovacao
+  /v1/rule-executions/{id}/reject:
+    post:
+      summary: Rejeita execucao de regra aguardando aprovacao sem aplicar acoes criticas
+      tags: [Workflow]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UuidId"
+      responses:
+        "200":
+          description: Execucao rejeitada
+        "422":
+          description: Execucao nao esta aguardando aprovacao
   /v1/tasks:
     get:
       summary: Lista tarefas operacionais

@@ -48,27 +48,28 @@ const showApp = (authenticated) => {
 const empty = () => $('[data-empty-template]').content.firstElementChild.cloneNode(true);
 
 const badgeClass = (value) => {
-    if (['CRITICO', 'ALTO', 'OVERDUE'].includes(value)) return 'danger';
-    if (['MEDIO', 'ATENCAO', 'OPEN'].includes(value)) return 'warning';
-    return 'info';
+    if (['CRITICO', 'ALTO', 'OVERDUE'].includes(value)) return 'bg-red-100 text-red-700 ring-1 ring-red-600/10';
+    if (['MEDIO', 'ATENCAO', 'OPEN'].includes(value)) return 'bg-orange-100 text-orange-700 ring-1 ring-orange-600/10';
+    if (['PLANO', 'TACOGRAFO'].includes(value)) return 'bg-slate-100 text-slate-700 ring-1 ring-slate-600/10';
+    return 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-600/10';
 };
 
 const renderMetric = (label, value) => {
     const item = document.createElement('article');
-    item.className = 'metric';
-    item.innerHTML = `<span>${label}</span><strong>${value ?? 0}</strong>`;
+    item.className = 'bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between hover:shadow-md transition-shadow group';
+    item.innerHTML = `<span class="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-indigo-500 transition-colors">${label}</span><strong class="text-3xl font-extrabold text-slate-800 mt-3 block">${value ?? 0}</strong>`;
     return item;
 };
 
 const renderListItem = ({ title, description, meta = [], badges = [] }) => {
     const item = document.createElement('article');
-    item.className = 'list-item';
+    item.className = 'bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-shadow group';
     item.innerHTML = `
-        <p class="item-title">${title || 'Sem titulo'}</p>
-        ${description ? `<p class="item-description">${description}</p>` : ''}
-        <div class="badge-row">
-            ${meta.filter(Boolean).map((value) => `<span class="badge">${value}</span>`).join('')}
-            ${badges.filter(Boolean).map((value) => `<span class="badge ${badgeClass(value)}">${value}</span>`).join('')}
+        <h4 class="font-bold text-slate-800 text-base mb-1 group-hover:text-indigo-600 transition-colors">${title || 'Sem titulo'}</h4>
+        ${description ? `<p class="text-sm text-slate-500 mb-3 line-clamp-2">${description}</p>` : ''}
+        <div class="flex flex-wrap gap-2 mt-2">
+            ${meta.filter(Boolean).map((value) => `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600">${value}</span>`).join('')}
+            ${badges.filter(Boolean).map((value) => `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeClass(value)}">${value}</span>`).join('')}
         </div>
     `;
     return item;
@@ -89,11 +90,12 @@ const renderCollection = (selector, records, mapper) => {
 const asPageData = (payload) => payload?.data || [];
 
 const loadDashboard = async () => {
-    const [mission, alerts, insights, tasks, plans, tachographs, report, audit] = await Promise.all([
+    const [mission, alerts, insights, tasks, approvals, plans, tachographs, report, audit] = await Promise.all([
         api('/api/v1/mission-control'),
         api('/api/v1/alerts?status=ABERTO'),
         api('/api/v1/insights'),
         api('/api/v1/tasks?status=OPEN'),
+        api('/api/v1/rule-executions?status=WAITING_APPROVAL'),
         api('/api/v1/maintenance-plans?status=ACTIVE'),
         api('/api/v1/tachographs'),
         api('/api/v1/reports/executive'),
@@ -126,7 +128,24 @@ const loadDashboard = async () => {
     }));
 
     const taskRecords = asPageData(tasks);
-    $('[data-action-count]').textContent = `${taskRecords.length} abertas`;
+    const approvalRecords = asPageData(approvals);
+    $('[data-action-count]').textContent = `${taskRecords.length} abertas / ${approvalRecords.length} aprovacoes`;
+    renderCollection('[data-approval-list]', approvalRecords, (execution) => {
+        const item = renderListItem({
+            title: execution.trigger_event,
+            description: `${execution.entity} ${execution.entity_id}`,
+            meta: [`Executado ${execution.executed_at || '-'}`],
+            badges: [execution.status],
+        });
+        const actions = document.createElement('div');
+        actions.className = 'flex gap-2 mt-4 pt-3 border-t border-slate-100';
+        actions.innerHTML = `
+            <button type="button" class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-2 px-3 rounded-lg text-sm transition-colors" data-approve-execution="${execution.id}">Aprovar</button>
+            <button type="button" class="flex-1 bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-2 px-3 rounded-lg text-sm transition-colors" data-reject-execution="${execution.id}">Rejeitar</button>
+        `;
+        item.appendChild(actions);
+        return item;
+    });
     renderCollection('[data-task-list]', taskRecords, (task) => renderListItem({
         title: task.title,
         description: task.description,
@@ -220,6 +239,26 @@ const bindEvents = () => {
         link.download = 'audit-logs.csv';
         link.click();
         URL.revokeObjectURL(url);
+    });
+
+    document.addEventListener('click', async (event) => {
+        const approveButton = event.target.closest('[data-approve-execution]');
+        const rejectButton = event.target.closest('[data-reject-execution]');
+
+        if (approveButton) {
+            approveButton.disabled = true;
+            await api(`/api/v1/rule-executions/${approveButton.dataset.approveExecution}/approve`, { method: 'POST' });
+            await loadDashboard();
+        }
+
+        if (rejectButton) {
+            rejectButton.disabled = true;
+            await api(`/api/v1/rule-executions/${rejectButton.dataset.rejectExecution}/reject`, {
+                method: 'POST',
+                body: JSON.stringify({ reason: 'Rejeitado pela central de acoes.' }),
+            });
+            await loadDashboard();
+        }
     });
 };
 

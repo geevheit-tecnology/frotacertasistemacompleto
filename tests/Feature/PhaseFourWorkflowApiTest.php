@@ -9,6 +9,7 @@ use App\Models\Group;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -113,6 +114,243 @@ class PhaseFourWorkflowApiTest extends TestCase
             ->getJson('/api/v1/mission-control')
             ->assertOk()
             ->assertJsonPath('tasks.open', 1);
+    }
+
+    public function test_rule_execution_can_block_vehicle_and_create_work_order_automatically(): void
+    {
+        $user = $this->createUserWithPermissions(['workflow.manage']);
+        $token = $this->tokenFor($user);
+        $vehicle = Vehicle::create([
+            'group_id' => $user->group_id,
+            'company_id' => $user->company_id,
+            'branch_id' => $user->branch_id,
+            'plate' => 'BLK1234',
+            'status' => 'ACTIVE',
+            'current_odometer_km' => 45000,
+        ]);
+
+        $ruleId = $this->withToken($token)->postJson('/api/v1/rules', [
+            'name' => 'Checklist critico bloqueia veiculo e abre OS',
+            'trigger_event' => 'checklist.nonconformity.created.v1',
+            'actions' => [
+                ['type' => 'block_vehicle'],
+                [
+                    'type' => 'create_work_order',
+                    'number' => 'AUTO-BLK-001',
+                    'work_order_type' => 'CORRECTIVE',
+                    'priority' => 'CRITICAL',
+                    'description' => 'Inspecionar nao conformidade critica.',
+                ],
+            ],
+            'severity' => 'CRITICO',
+            'priority' => 100,
+        ])->assertCreated()->json('id');
+
+        $executionId = $this->withToken($token)
+            ->postJson('/api/v1/rules/'.$ruleId.'/execute', [
+                'entity' => 'vehicles',
+                'entity_id' => $vehicle->id,
+                'payload' => ['vehicle_id' => $vehicle->id],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'MATCHED')
+            ->json('id');
+
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->id,
+            'status' => 'BLOCKED',
+        ]);
+        $this->assertDatabaseHas('work_orders', [
+            'company_id' => $user->company_id,
+            'vehicle_id' => $vehicle->id,
+            'number' => 'AUTO-BLK-001',
+            'type' => 'CORRECTIVE',
+            'priority' => 'CRITICAL',
+            'status' => 'OPEN',
+        ]);
+        $this->assertDatabaseHas('rule_executions', [
+            'id' => $executionId,
+            'status' => 'MATCHED',
+        ]);
+        $this->assertDatabaseHas('outbox', [
+            'event_name' => 'vehicle.blocked.v1',
+            'aggregate_id' => $vehicle->id,
+            'status' => 'PENDING',
+        ]);
+        $this->assertDatabaseHas('outbox', [
+            'event_name' => 'maintenance.order.created.v1',
+            'aggregate_type' => 'work_orders',
+            'status' => 'PENDING',
+        ]);
+    }
+
+    public function test_rule_requiring_approval_does_not_run_critical_actions_immediately(): void
+    {
+        $user = $this->createUserWithPermissions(['workflow.manage']);
+        $token = $this->tokenFor($user);
+        $vehicle = Vehicle::create([
+            'group_id' => $user->group_id,
+            'company_id' => $user->company_id,
+            'branch_id' => $user->branch_id,
+            'plate' => 'APR1234',
+            'status' => 'ACTIVE',
+            'current_odometer_km' => 12000,
+        ]);
+
+        $ruleId = $this->withToken($token)->postJson('/api/v1/rules', [
+            'name' => 'Bloqueio exige aprovacao',
+            'trigger_event' => 'document.expired.v1',
+            'actions' => [
+                ['type' => 'block_vehicle'],
+                ['type' => 'create_work_order', 'number' => 'AUTO-APPROVAL-001'],
+            ],
+            'severity' => 'CRITICO',
+            'requires_approval' => true,
+        ])->assertCreated()->json('id');
+
+        $this->withToken($token)
+            ->postJson('/api/v1/rules/'.$ruleId.'/execute', [
+                'entity' => 'vehicles',
+                'entity_id' => $vehicle->id,
+                'payload' => ['vehicle_id' => $vehicle->id],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'WAITING_APPROVAL')
+            ->assertJsonPath('result_payload.actions', []);
+
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->id,
+            'status' => 'ACTIVE',
+        ]);
+        $this->assertDatabaseMissing('work_orders', [
+            'number' => 'AUTO-APPROVAL-001',
+        ]);
+    }
+
+    public function test_waiting_rule_execution_can_be_approved_and_then_run_critical_actions(): void
+    {
+        $user = $this->createUserWithPermissions(['workflow.manage']);
+        $token = $this->tokenFor($user);
+        $vehicle = Vehicle::create([
+            'group_id' => $user->group_id,
+            'company_id' => $user->company_id,
+            'branch_id' => $user->branch_id,
+            'plate' => 'OKA1234',
+            'status' => 'ACTIVE',
+            'current_odometer_km' => 60000,
+        ]);
+
+        $ruleId = $this->withToken($token)->postJson('/api/v1/rules', [
+            'name' => 'Aprovacao cria bloqueio e OS',
+            'trigger_event' => 'document.expired.v1',
+            'actions' => [
+                ['type' => 'block_vehicle'],
+                ['type' => 'create_work_order', 'number' => 'AUTO-APPROVED-001', 'priority' => 'CRITICAL'],
+            ],
+            'severity' => 'CRITICO',
+            'requires_approval' => true,
+        ])->assertCreated()->json('id');
+
+        $executionId = $this->withToken($token)
+            ->postJson('/api/v1/rules/'.$ruleId.'/execute', [
+                'entity' => 'vehicles',
+                'entity_id' => $vehicle->id,
+                'payload' => ['vehicle_id' => $vehicle->id],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'WAITING_APPROVAL')
+            ->json('id');
+
+        $this->withToken($token)
+            ->postJson('/api/v1/rule-executions/'.$executionId.'/approve')
+            ->assertOk()
+            ->assertJsonPath('status', 'APPROVED')
+            ->assertJsonPath('result_payload.approved_by', $user->id);
+
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->id,
+            'status' => 'BLOCKED',
+        ]);
+        $this->assertDatabaseHas('work_orders', [
+            'number' => 'AUTO-APPROVED-001',
+            'vehicle_id' => $vehicle->id,
+            'status' => 'OPEN',
+        ]);
+        $this->assertDatabaseHas('outbox', [
+            'event_name' => 'vehicle.blocked.v1',
+            'aggregate_id' => $vehicle->id,
+        ]);
+        $this->assertDatabaseHas('outbox', [
+            'event_name' => 'maintenance.order.created.v1',
+            'aggregate_type' => 'work_orders',
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'entity' => 'rule_executions',
+            'entity_id' => $executionId,
+            'origin' => 'api.v1.rule-executions.approve',
+        ]);
+    }
+
+    public function test_waiting_rule_execution_can_be_rejected_without_running_actions(): void
+    {
+        $user = $this->createUserWithPermissions(['workflow.manage']);
+        $token = $this->tokenFor($user);
+        $vehicle = Vehicle::create([
+            'group_id' => $user->group_id,
+            'company_id' => $user->company_id,
+            'branch_id' => $user->branch_id,
+            'plate' => 'REJ1234',
+            'status' => 'ACTIVE',
+            'current_odometer_km' => 35000,
+        ]);
+
+        $ruleId = $this->withToken($token)->postJson('/api/v1/rules', [
+            'name' => 'Bloqueio recusavel',
+            'trigger_event' => 'document.expired.v1',
+            'actions' => [
+                ['type' => 'block_vehicle'],
+                ['type' => 'create_work_order', 'number' => 'AUTO-REJECTED-001'],
+            ],
+            'severity' => 'CRITICO',
+            'requires_approval' => true,
+        ])->assertCreated()->json('id');
+
+        $executionId = $this->withToken($token)
+            ->postJson('/api/v1/rules/'.$ruleId.'/execute', [
+                'entity' => 'vehicles',
+                'entity_id' => $vehicle->id,
+                'payload' => ['vehicle_id' => $vehicle->id],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'WAITING_APPROVAL')
+            ->json('id');
+
+        $this->withToken($token)
+            ->getJson('/api/v1/rule-executions?status=WAITING_APPROVAL')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $executionId);
+
+        $this->withToken($token)
+            ->postJson('/api/v1/rule-executions/'.$executionId.'/reject', [
+                'reason' => 'Documento sera regularizado manualmente.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'REJECTED')
+            ->assertJsonPath('result_payload.rejected_by', $user->id)
+            ->assertJsonPath('result_payload.rejection_reason', 'Documento sera regularizado manualmente.');
+
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->id,
+            'status' => 'ACTIVE',
+        ]);
+        $this->assertDatabaseMissing('work_orders', [
+            'number' => 'AUTO-REJECTED-001',
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'entity' => 'rule_executions',
+            'entity_id' => $executionId,
+            'origin' => 'api.v1.rule-executions.reject',
+        ]);
     }
 
     public function test_evidence_reference_can_be_registered_and_listed(): void

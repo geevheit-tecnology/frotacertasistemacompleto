@@ -37,6 +37,8 @@ class BootstrapTenantCommand extends Command
             'maintenance.manage',
             'tires.manage',
             'financial.manage',
+            'operations.manage',
+            'integrations.manage',
             'reports.view',
             'audit.view',
             'mission-control.view',

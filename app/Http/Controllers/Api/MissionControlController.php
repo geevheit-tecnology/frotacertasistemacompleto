@@ -7,14 +7,19 @@ use App\Models\Alert;
 use App\Models\ChecklistExecution;
 use App\Models\FinancialTransaction;
 use App\Models\FuelRecord;
+use App\Models\Contract;
 use App\Models\Insight;
 use App\Models\Invoice;
+use App\Models\InsurancePolicy;
 use App\Models\MaintenancePlan;
 use App\Models\NonConformity;
 use App\Models\TachographRecord;
 use App\Models\Task;
+use App\Models\TelematicsEvent;
 use App\Models\Tire;
+use App\Models\Trip;
 use App\Models\Vehicle;
+use App\Models\VehicleDocument;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,13 +37,18 @@ class MissionControlController extends Controller
         $checklists = ChecklistExecution::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $financial = FinancialTransaction::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $fuel = FuelRecord::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $contracts = Contract::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $invoices = Invoice::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $insurancePolicies = InsurancePolicy::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $insights = Insight::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $maintenancePlans = MaintenancePlan::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $nonConformities = NonConformity::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $tachographs = TachographRecord::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $tasks = Task::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $telematics = TelematicsEvent::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
         $tires = Tire::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $trips = Trip::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $vehicleDocuments = VehicleDocument::query()->where('company_id', $request->user()->company_id)->when($data['branch_id'] ?? $request->user()->branch_id, fn ($query, $branchId) => $query->where('branch_id', $branchId));
         $today = CarbonImmutable::today();
 
         return response()->json([
@@ -65,6 +75,15 @@ class MissionControlController extends Controller
             'tachographs' => [
                 'expired' => (clone $tachographs)->where('expires_at', '<', $today)->count(),
                 'next_90_days' => (clone $tachographs)->whereBetween('expires_at', [$today, $today->addDays(90)])->count(),
+            ],
+            'compliance' => [
+                'vehicle_documents_next_90_days' => (clone $vehicleDocuments)->whereBetween('expires_at', [$today, $today->addDays(90)])->count(),
+                'insurance_next_90_days' => (clone $insurancePolicies)->whereBetween('expires_at', [$today, $today->addDays(90)])->count(),
+                'contracts_next_90_days' => (clone $contracts)->whereBetween('ends_at', [$today, $today->addDays(90)])->count(),
+            ],
+            'operations' => [
+                'scheduled_trips' => (clone $trips)->where('status', 'SCHEDULED')->count(),
+                'telematics_events' => (clone $telematics)->count(),
             ],
             'tasks' => [
                 'open' => (clone $tasks)->where('status', 'OPEN')->count(),

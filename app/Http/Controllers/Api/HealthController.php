@@ -23,12 +23,14 @@ class HealthController extends Controller
             $database = 'unavailable';
         }
         $outboxPending = $database === 'ok' ? Outbox::query()->where('status', 'PENDING')->count() : null;
+        $outboxDeadLetter = $database === 'ok' ? Outbox::query()->where('status', 'DEAD_LETTER')->count() : null;
 
         return response()->json([
             'status' => $database === 'ok' ? 'ready' : 'degraded',
             'database' => $database,
             'queue' => config('queue.default'),
             'outbox_pending' => $outboxPending,
+            'outbox_dead_letter' => $outboxDeadLetter,
         ]);
     }
 }

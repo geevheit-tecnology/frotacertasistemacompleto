@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -33,6 +34,13 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             report($e);
+
+            if ($e instanceof HttpExceptionInterface) {
+                return new JsonResponse([
+                    'message' => $e->getMessage() !== '' ? $e->getMessage() : JsonResponse::$statusTexts[$e->getStatusCode()],
+                    'status' => $e->getStatusCode(),
+                ], $e->getStatusCode(), $e->getHeaders());
+            }
 
             return new JsonResponse([
                 'message' => 'Internal Server Error',

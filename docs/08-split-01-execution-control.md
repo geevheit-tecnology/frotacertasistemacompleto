@@ -196,3 +196,25 @@ Escopo inicial implementado a partir dos itens 46, 48 e 49 do split:
 | Relatorio executivo | Implementado inicial | `/api/v1/reports/executive` |
 | Observabilidade ampliada | Implementado inicial | `/api/ready` retorna banco, fila e pendencias de outbox |
 | Permissoes de relatorio/auditoria | Implementado inicial | `reports.view`, `audit.view` |
+
+## Fechamento operacional pos-matriz
+
+Escopo priorizado a partir de `docs/09-master-split-compliance-matrix.md`:
+
+| Item | Status | Evidencia |
+| --- | --- | --- |
+| Mission Control web | Implementado inicial | Home renderiza login, indicadores, alertas, insights, acoes, calendario e relatorios consumindo API real |
+| Assets HTTPS em Vercel | Implementado | `AppServiceProvider` forca scheme HTTPS em producao |
+| Scheduler de outbox | Implementado inicial | `routes/console.php` agenda `outbox:process --limit=50` a cada minuto |
+| Processamento de outbox | Implementado inicial | `OutboxProcessor` reserva eventos, publica, reprograma retry e envia para dead-letter |
+| Comando operacional | Implementado inicial | `php artisan outbox:process --limit=50` |
+| Observabilidade de dead-letter | Implementado inicial | `/api/ready` retorna `outbox_dead_letter` |
+| Testes de outbox | Concluido | `OutboxProcessingTest`: sucesso, retry/dead-letter e ready |
+| Bloqueio automatico por regra | Implementado inicial | `RuleEngine` executa acao `block_vehicle` e publica `vehicle.blocked.v1` |
+| Liberacao automatica por regra | Implementado inicial | `RuleEngine` executa acao `release_vehicle` e publica `vehicle.released.v1` |
+| OS automatica por regra | Implementado inicial | `RuleEngine` executa acao `create_work_order` e publica `maintenance.order.created.v1` |
+| Aprovacao obrigatoria | Implementado inicial | Regras com `requires_approval=true` ficam em `WAITING_APPROVAL` sem executar acoes criticas |
+| Aprovacao operacional | Implementado inicial | `POST /api/v1/rule-executions/{ruleExecution}/approve` aplica acoes pendentes e audita aprovador |
+| Rejeicao operacional | Implementado inicial | `POST /api/v1/rule-executions/{ruleExecution}/reject` rejeita execucao pendente sem aplicar acoes criticas |
+| Aprovacoes na central de acoes | Implementado inicial | Aba `Acoes` lista execucoes `WAITING_APPROVAL` com aprovar/rejeitar |
+| Erros HTTP no Vercel | Implementado | Handler preserva status HTTP como 404/422 em vez de mascarar tudo como 500 |
