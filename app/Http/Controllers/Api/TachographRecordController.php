@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Intelligence\Application\TachographAlertService;
 use App\Models\TachographRecord;
@@ -12,6 +13,8 @@ use Illuminate\Http\Request;
 
 class TachographRecordController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function __construct(private readonly TachographAlertService $alertService)
     {
     }
@@ -23,9 +26,10 @@ class TachographRecordController extends Controller
             'status' => ['nullable', 'string', 'max:32'],
             'branch_id' => ['nullable', 'uuid'],
         ]);
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
 
         $query = TachographRecord::query()
-            ->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id)
+            ->tenant($request->user()->company_id, $branchId)
             ->with('vehicle:id,plate');
 
         if (isset($data['vehicle_id'])) {

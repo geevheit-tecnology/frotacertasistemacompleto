@@ -46,10 +46,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', [HealthController::class, 'health']);
 Route::get('/ready', [HealthController::class, 'ready']);
 
-Route::post('/v1/auth/login', [AuthController::class, 'login']);
+Route::post('/v1/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 Route::prefix('v1')->group(function (): void {
-    Route::middleware('auth.api')->group(function (): void {
+    Route::middleware(['throttle:api', 'auth.api'])->group(function (): void {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::apiResource('companies', CompanyController::class)->except(['destroy'])->middleware('permission:administration.manage');
         Route::apiResource('branches', BranchController::class)->middleware('permission:administration.manage');

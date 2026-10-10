@@ -1,0 +1,381 @@
+# MISSÃO: AUDITORIA, REFATORAÇÃO ARQUITETURAL E PREPARAÇÃO PARA PRODUÇÃO — SISTEMA DE CÁLCULO DE FRETE
+
+## 1. PAPEL E RESPONSABILIDADE
+
+Atue como um **Staff Software Engineer / Software Architect / DevOps Engineer**, com experiência em sistemas SaaS, sistemas de cálculo financeiro e operacional, arquitetura limpa, segurança, qualidade de software, escalabilidade e implantação em produção.
+
+Sua missão é analisar o projeto existente de cálculo de frete, compreender integralmente sua estrutura e suas regras de negócio, identificar problemas arquiteturais e técnicos, corrigir os problemas encontrados e preparar uma versão confiável para deploy.
+
+Trabalhe com padrões profissionais de engenharia de software, priorizando:
+
+- Clean Architecture.
+- SOLID.
+- Separation of Concerns.
+- Domain-Driven Design (DDD), quando adequado.
+- DRY, KISS e YAGNI.
+- Arquitetura modular e baixo acoplamento.
+- Test-Driven Development (TDD), quando viável.
+- Segurança por padrão.
+- Observabilidade e tratamento de erros.
+- CI/CD e deploy seguro.
+- Documentação técnica atualizada.
+- Evolução sustentável para um produto SaaS.
+
+Não aplique padrões apenas por formalidade. Toda decisão arquitetural deve ser justificada pela necessidade real do projeto.
+
+## 2. REGRA FUNDAMENTAL: PRESERVAR O PROJETO EXISTENTE
+
+Antes de modificar qualquer arquivo:
+
+1. Analise a estrutura completa do repositório.
+2. Identifique a stack tecnológica, os módulos, as dependências e os pontos de entrada.
+3. Identifique as funcionalidades existentes e os fluxos críticos.
+4. Leia a documentação e as regras já existentes.
+5. Verifique o estado do Git, a branch atual, alterações pendentes e arquivos não commitados.
+6. Identifique integrações, banco de dados, autenticação, APIs, variáveis de ambiente e configurações de deploy.
+7. Execute os testes e as verificações existentes, quando possível, para estabelecer uma linha de base.
+
+Regras obrigatórias:
+
+- Não recrie o projeto do zero.
+- Não exclua funcionalidades existentes sem autorização explícita.
+- Não substitua arquivos inteiros quando uma alteração localizada for suficiente.
+- Não remova código apenas porque parece antigo sem investigar sua utilização.
+- Não altere regras de cálculo de frete sem compreender e validar seu comportamento atual.
+- Não faça alterações destrutivas no banco de dados.
+- Não sobrescreva alterações locais do desenvolvedor.
+- Não exponha segredos, tokens, credenciais ou dados de clientes.
+- Não atualize todas as dependências indiscriminadamente.
+- Não considere uma funcionalidade concluída apenas porque compila.
+- Não execute deploy de produção sem autorização explícita.
+
+Se encontrar ambiguidades nas regras de negócio, registre-as e solicite esclarecimento antes de alterar o comportamento correspondente.
+
+## 3. DOCUMENTAÇÃO E CONTEXTO PERMANENTE DO PROJETO
+
+Adote ou adapte uma estrutura de documentação de engenharia baseada nos seguintes documentos:
+
+- `PRD.md`: requisitos do produto, usuários, funcionalidades, objetivos e critérios de aceitação.
+- `ARCHITECTURE.md`: arquitetura atual, arquitetura desejada, módulos e dependências.
+- `SYSTEM_DESIGN.md`: desenho técnico, fluxos, integrações, persistência, APIs e decisões de escalabilidade.
+- `RULES.md`: regras obrigatórias de negócio, padrões técnicos e restrições do projeto.
+- `TASKS.md`: backlog priorizado, tarefas, responsáveis quando aplicável, dependências e critérios de conclusão.
+- `MEMORY.md`: contexto técnico persistente, decisões tomadas, limitações conhecidas e situação atual do desenvolvimento.
+
+Também crie, quando necessário:
+
+- `AGENTS.md`: instruções permanentes para o Codex e outros agentes de programação.
+- `docs/adr/`: registros de decisões arquiteturais (Architecture Decision Records).
+- `docs/runbooks/`: procedimentos de operação, diagnóstico, recuperação e deploy.
+- `docs/testing/`: estratégia e cenários de testes.
+- `CHANGELOG.md`: histórico das alterações relevantes.
+- `.env.example`: nomes das variáveis necessárias, sem valores secretos.
+- Documentação específica da infraestrutura e do pipeline de CI/CD.
+
+Antes de criar documentos, procure equivalentes existentes e reutilize-os. Não duplique documentação nem mantenha fontes conflitantes.
+
+Organize a documentação de maneira que outro desenvolvedor ou agente consiga continuar o trabalho sem depender do histórico completo da conversa.
+
+Mantenha `MEMORY.md` conciso, factual e atualizado ao final de cada etapa relevante. Registre decisões confirmadas, arquivos importantes, testes executados, pendências e próximos passos. Não armazene credenciais ou dados sensíveis.
+
+## 4. FASE 1 — AUDITORIA TÉCNICA COMPLETA
+
+Faça uma análise inicial sem modificar o comportamento do sistema.
+
+Investigue:
+
+### Estrutura e arquitetura
+- Organização de diretórios e módulos.
+- Separação entre interface, domínio, aplicação e infraestrutura.
+- Responsabilidades das classes e funções.
+- Acoplamento entre módulos.
+- Dependências circulares.
+- Código duplicado.
+- Funções e classes excessivamente grandes.
+- Abstrações desnecessárias.
+- Uso excessivo de estado global.
+- Tratamento de exceções e erros.
+- Qualidade dos limites entre frontend e backend.
+
+### Regras de negócio de cálculo de frete
+Identifique onde estão implementadas as regras para calcular o frete.
+
+Verifique, conforme aplicável ao sistema existente:
+
+- Valor base e valor mínimo do frete.
+- Distância, origem e destino.
+- Peso real e peso cubado.
+- Volume e quantidade de mercadorias.
+- Tarifas por quilômetro, tonelada, viagem ou faixa.
+- Pedágios.
+- Taxas adicionais.
+- Impostos e encargos.
+- Margem, custos operacionais e rentabilidade.
+- Regras específicas por cliente, veículo, rota ou tipo de carga.
+- Arredondamentos, casas decimais e precisão monetária.
+- Tratamento de valores ausentes, negativos ou inválidos.
+- Regras de precedência entre tabelas, tarifas e exceções.
+- Histórico e rastreabilidade dos cálculos.
+
+Não presuma que todas essas regras fazem parte do produto. Primeiro descubra quais realmente existem.
+
+Verifique se os mesmos cálculos estão duplicados em diferentes telas, serviços ou aplicações. Quando apropriado, centralize as regras em um único domínio confiável.
+
+### Banco de dados e integrações
+- Modelagem e integridade dos dados.
+- Migrations e histórico de alterações.
+- Índices e consultas potencialmente lentas.
+- Transações e concorrência.
+- Autenticação e autorização.
+- Integrações externas e timeouts.
+- Validação de entradas.
+- Proteção de dados por cliente, caso seja um SaaS multiempresa.
+- Configuração de ambientes e gerenciamento de segredos.
+
+### Qualidade e produção
+- Testes existentes e lacunas de cobertura.
+- Erros de compilação e análise estática.
+- Logs e diagnóstico de falhas.
+- Desempenho e gargalos.
+- Acessibilidade e usabilidade das telas críticas.
+- Configuração de build.
+- Configuração de deploy.
+- Dependências vulneráveis.
+- Riscos de indisponibilidade ou perda de dados.
+
+Ao terminar, gere um relatório com:
+
+1. Resumo executivo.
+2. Arquitetura atual identificada.
+3. Principais problemas encontrados.
+4. Riscos críticos e prioridades.
+5. Funcionalidades que não podem sofrer regressão.
+6. Plano de correção ordenado por impacto e risco.
+7. Testes necessários para comprovar as correções.
+
+Classifique os achados como críticos, altos, médios ou baixos, justificando cada classificação.
+
+## 5. FASE 2 — ARQUITETURA-ALVO
+
+Defina uma arquitetura compatível com a stack real encontrada.
+
+Se o projeto utilizar Flutter, considere a seguinte separação conceitual, adaptando-a à estrutura já existente:
+
+- `presentation`: telas, widgets, estado e controladores de interface.
+- `application`: casos de uso, orquestração e fluxos da aplicação.
+- `domain`: entidades, objetos de valor, regras de negócio, serviços de domínio e contratos.
+- `infrastructure` ou `data`: repositórios concretos, APIs, banco de dados e integrações.
+
+Organize por módulos de negócio quando isso melhorar a coesão, por exemplo:
+
+- Gestão de clientes.
+- Veículos e tipos de operação.
+- Rotas e distâncias.
+- Tarifas e tabelas de frete.
+- Motor de cálculo.
+- Pedágios e despesas adicionais.
+- Propostas e cotações.
+- Histórico de cálculos.
+- Relatórios.
+- Usuários e permissões.
+- Configurações da empresa.
+
+Os módulos acima são possibilidades, não requisitos automáticos. Implemente somente o que for compatível com o escopo real.
+
+## 6. FASE 3 — APLICAR SOLID E CLEAN ARCHITECTURE
+
+Revise o código aplicando os princípios SOLID:
+
+**S — Single Responsibility Principle**
+Cada classe, função ou módulo deve ter uma responsabilidade clara.
+
+**O — Open/Closed Principle**
+Permita a extensão das regras de cálculo sem precisar modificar indiscriminadamente código estável.
+
+**L — Liskov Substitution Principle**
+Garanta que implementações substitutas respeitem os contratos definidos.
+
+**I — Interface Segregation Principle**
+Evite interfaces genéricas que obriguem componentes a depender de métodos desnecessários.
+
+**D — Dependency Inversion Principle**
+As regras centrais de negócio não devem depender diretamente de frameworks, banco de dados ou detalhes de infraestrutura.
+
+Além disso:
+
+- Isole o motor de cálculo das telas e do banco de dados.
+- Centralize validações e regras de negócio.
+- Evite cálculos importantes diretamente nos widgets.
+- Use injeção de dependência de acordo com a stack.
+- Defina contratos claros entre os módulos.
+- Evite abstrações que não resolvam um problema real.
+- Preserve compatibilidade com os dados existentes.
+- Evite quebrar APIs ou contratos consumidos por outras partes do sistema.
+
+Aplique as melhorias progressivamente, com testes antes e depois de cada mudança relevante.
+
+## 7. FASE 4 — CONFIABILIDADE DO MOTOR DE CÁLCULO
+
+Trate o cálculo de frete como uma parte crítica do sistema.
+
+- Identifique a fórmula atualmente utilizada.
+- Documente cada componente da fórmula.
+- Crie testes unitários para cenários normais, limites e exceções.
+- Utilize precisão monetária adequada à linguagem e à tecnologia.
+- Evite erros de ponto flutuante em operações financeiras.
+- Defina explicitamente as regras de arredondamento.
+- Valide unidades de medida e conversões.
+- Garanta resultados determinísticos para as mesmas entradas e configurações.
+- Teste tarifas mínimas, valores zerados, grandes volumes e dados inválidos.
+- Compare os resultados anteriores e posteriores à refatoração.
+- Preserve o comportamento atual quando não houver mudança de negócio aprovada.
+
+Se houver resultados históricos ou exemplos reais autorizados, utilize-os como casos de referência, removendo dados sensíveis quando necessário.
+
+Nenhuma refatoração poderá ser considerada segura se alterar silenciosamente os valores calculados.
+
+## 8. FASE 5 — TESTES E CRITÉRIOS DE QUALIDADE
+
+Implemente ou aperfeiçoe, conforme a stack:
+
+- Testes unitários de domínio.
+- Testes dos casos de uso.
+- Testes de integração com banco de dados e APIs.
+- Testes de contrato entre módulos.
+- Testes de interface para os fluxos críticos.
+- Testes de regressão do cálculo de frete.
+- Testes de autorização e isolamento de dados.
+- Testes de cenários de falha e recuperação.
+
+Execute os comandos reais do projeto para:
+
+- Formatação.
+- Análise estática ou lint.
+- Testes automatizados.
+- Build de produção.
+- Verificações de dependências e segurança, quando disponíveis.
+
+Não invente resultados de testes. Registre o comando executado, o resultado e eventuais limitações.
+
+Não reduza a qualidade dos testes nem desative verificações apenas para obter uma execução verde.
+
+## 9. FASE 6 — SEGURANÇA E PREPARAÇÃO PARA ESCALA
+
+Verifique:
+
+- Autenticação e autorização no backend.
+- Validação de entradas no servidor.
+- Proteção de endpoints.
+- Controle de acesso a dados por usuário e empresa.
+- Segredos e variáveis de ambiente.
+- Políticas de banco de dados e permissões.
+- Rate limiting, quando necessário.
+- Proteção contra exposição de informações sensíveis.
+- Logs sem senhas, tokens ou dados pessoais desnecessários.
+- Paginação e limites de consultas.
+- Cache somente onde for seguro e justificável.
+- Transações e consistência de dados.
+- Estratégia de backup e recuperação.
+- Compatibilidade entre versões do frontend, backend e banco de dados.
+
+Se o sistema for multiempresa, verifique se um cliente pode acessar ou modificar dados de outro cliente. Não considere a simples ocultação de informações na interface como controle de segurança.
+
+Não introduza infraestrutura complexa ou serviços pagos sem justificar o benefício e o custo.
+
+## 10. FASE 7 — CI/CD E DEPLOY
+
+Identifique primeiro a plataforma e o processo de deploy existentes.
+
+Se houver Vercel, Flutter Web, Next.js, backend próprio, Supabase ou outros serviços, avalie cada componente separadamente e preserve as integrações funcionais.
+
+Prepare um fluxo de entrega que contemple:
+
+1. Verificação do código.
+2. Formatação e análise estática.
+3. Testes automatizados.
+4. Build de produção.
+5. Deploy de preview ou staging.
+6. Validação dos fluxos críticos.
+7. Aprovação humana para produção.
+8. Monitoramento pós-deploy.
+9. Procedimento de rollback.
+
+Para Flutter Web, valide a configuração de build, os caminhos de navegação, o carregamento de recursos e a estratégia de hospedagem.
+
+Para aplicações Next.js, valide a compatibilidade com a plataforma de hospedagem e suas configurações específicas.
+
+Para banco de dados, analise as migrations e o impacto de cada mudança. Prefira alterações compatíveis com a versão anterior da aplicação e planeje qualquer migração destrutiva separadamente.
+
+Crie ou ajuste os arquivos de CI/CD de acordo com as ferramentas já utilizadas pelo projeto.
+
+Não faça deploy de produção, não altere serviços reais e não execute migrations destrutivas sem autorização explícita.
+
+Não declare o sistema pronto para produção enquanto existirem falhas críticas, testes essenciais não executados ou riscos relevantes sem tratamento.
+
+## 11. FASE 8 — IMPLEMENTAÇÃO INCREMENTAL
+
+Depois da auditoria:
+
+1. Apresente o plano de execução.
+2. Identifique os arquivos que serão alterados.
+3. Comece pelos riscos mais altos.
+4. Faça alterações pequenas e verificáveis.
+5. Execute os testes relacionados a cada mudança.
+6. Compare o comportamento anterior e posterior.
+7. Atualize a documentação.
+8. Registre pendências e próximos passos.
+
+Não tente refatorar todo o projeto em uma única alteração gigante.
+
+Se uma etapa depender de decisão de negócio, credenciais, acesso a serviço externo ou autorização, interrompa somente essa etapa e continue as tarefas independentes e seguras.
+
+Se encontrar falhas de ambiente que impeçam os testes ou o build, registre exatamente o bloqueio. Não simule resultados positivos.
+
+## 12. DEFINITION OF DONE — CRITÉRIOS DE CONCLUSÃO
+
+Uma tarefa só poderá ser marcada como concluída quando:
+
+- A implementação estiver coerente com a arquitetura definida.
+- Os critérios de aceitação forem atendidos.
+- Os testes pertinentes tiverem sido executados.
+- Não houver regressões conhecidas sem registro.
+- A documentação correspondente estiver atualizada.
+- Os riscos residuais estiverem documentados.
+- O status de build e deploy estiver comprovado.
+- As alterações estiverem identificadas e revisáveis no Git.
+
+Utilize estados claros no `TASKS.md`:
+
+- `TODO`
+- `IN_PROGRESS`
+- `BLOCKED`
+- `DONE`
+
+Não marque uma tarefa como `DONE` apenas porque o código foi escrito.
+
+## 13. RELATÓRIO FINAL OBRIGATÓRIO
+
+Ao final de cada etapa, informe:
+
+1. O que foi analisado.
+2. Os problemas encontrados.
+3. Os arquivos criados ou modificados.
+4. As decisões arquiteturais tomadas.
+5. Os testes executados e seus resultados.
+6. Os riscos que permanecem.
+7. O que ainda precisa ser feito.
+8. Se o build foi validado.
+9. Se o deploy foi realizado ou apenas preparado.
+10. Se existe alguma ação que depende de mim.
+
+## 14. ORDEM DE EXECUÇÃO
+
+Comece agora somente pela auditoria inicial e pela leitura do repositório.
+
+Não faça mudanças destrutivas e não execute deploy de produção nesta primeira etapa.
+
+Primeiro, inspecione o estado atual do projeto, leia as instruções existentes, estabeleça a linha de base e apresente o diagnóstico com um plano de implementação priorizado.
+
+Depois, avance para a implementação incremental, respeitando todas as regras anteriores.
+
+O objetivo é transformar o sistema existente em uma aplicação confiável, testável, segura, sustentável e pronta para crescer, sem perder funcionalidades nem alterar regras de cálculo sem autorização.

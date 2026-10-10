@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Models\Vehicle;
 use App\Support\Auditor;
@@ -10,14 +11,17 @@ use Illuminate\Http\Request;
 
 class VehicleController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
             'branch_id' => ['nullable', 'uuid'],
             'status' => ['nullable', 'string', 'max:32'],
         ]);
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
 
-        $query = Vehicle::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $query = Vehicle::query()->tenant($request->user()->company_id, $branchId);
 
         if (isset($data['status'])) {
             $query->where('status', $data['status']);
@@ -39,11 +43,12 @@ class VehicleController extends Controller
             'current_hourmeter' => ['nullable', 'integer', 'min:0'],
             'status' => ['nullable', 'string', 'max:32'],
         ]);
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
 
         $vehicle = Vehicle::create($data + [
             'group_id' => $request->user()->group_id,
             'company_id' => $request->user()->company_id,
-            'branch_id' => $data['branch_id'] ?? $request->user()->branch_id,
+            'branch_id' => $branchId,
         ]);
 
         $auditor->recordCreated($request, $vehicle, 'api.v1.vehicles.store');
@@ -71,6 +76,9 @@ class VehicleController extends Controller
             'current_hourmeter' => ['nullable', 'integer', 'min:0'],
             'status' => ['nullable', 'string', 'max:32'],
         ]);
+        if (array_key_exists('branch_id', $data)) {
+            $data['branch_id'] = $this->resolveBranchId($request->user(), $data['branch_id']);
+        }
 
         $model->fill($data);
         $model->save();

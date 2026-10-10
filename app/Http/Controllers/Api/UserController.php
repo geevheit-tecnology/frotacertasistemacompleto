@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\Auditor;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function index(Request $request): JsonResponse
     {
         return response()->json(
@@ -31,6 +34,7 @@ class UserController extends Controller
             'branch_id' => ['nullable', 'uuid'],
             'status' => ['nullable', 'string', 'max:32'],
         ]);
+        $data['branch_id'] = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
 
         $user = User::create([
             ...$data,
@@ -61,6 +65,9 @@ class UserController extends Controller
             'branch_id' => ['nullable', 'uuid'],
             'status' => ['nullable', 'string', 'max:32'],
         ]);
+        if (array_key_exists('branch_id', $data)) {
+            $data['branch_id'] = $this->resolveBranchId($request->user(), $data['branch_id']);
+        }
 
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);

@@ -1741,7 +1741,7 @@ Financeiro:
 * TCO;
 * fornecedores.
 
-## FASE 7
+## FASE 
 
 Intelligence:
 

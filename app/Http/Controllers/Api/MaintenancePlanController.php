@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Models\MaintenancePlan;
 use App\Models\Vehicle;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class MaintenancePlanController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -18,8 +21,9 @@ class MaintenancePlanController extends Controller
             'status' => ['nullable', 'string', 'max:32'],
             'branch_id' => ['nullable', 'uuid'],
         ]);
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
 
-        $query = MaintenancePlan::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
+        $query = MaintenancePlan::query()->tenant($request->user()->company_id, $branchId);
 
         if (isset($data['component'])) {
             $query->where('component', $data['component']);

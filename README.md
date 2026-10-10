@@ -132,6 +132,7 @@ DATABASE_URL='postgresql://...' ./scripts/vercel-set-neon-env.sh
 
 - Arquitetura: `docs/02-architecture.md`
 - Modelo de dados: `docs/03-data-model.md`
+- Manual SaaS: `docs/SAAS_MANUAL.md`
 - Preventive Intelligence Engine: `docs/04-preventive-intelligence-engine.md`
 - Eventos e auditoria: `docs/05-events-audit.md`
 - Controle do Split 01: `docs/08-split-01-execution-control.md`
@@ -143,5 +144,14 @@ O projeto possui configuracao inicial para Vercel serverless:
 
 - `vercel.json`
 - `api/index.php`
+
+Para preview/staging/producao, configure variaveis no provedor, sem commitar segredos:
+
+- `APP_KEY`
+- `APP_URL`
+- `DB_CONNECTION=pgsql`
+- `DB_URL` ou `DATABASE_URL`
+- `DB_SSLMODE=require`
+- `VIEW_COMPILED_PATH=/tmp/frotacerta/views`
 
 O preview sem PostgreSQL hospedado valida a aplicacao e endpoints sem persistencia, como `/api/health`. Endpoints autenticados e persistentes devem receber variaveis `DB_*` de um PostgreSQL gerenciado antes do uso operacional.

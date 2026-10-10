@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Intelligence\Application\OilServiceAlertService;
 use App\Models\OilServiceRecord;
@@ -14,6 +15,8 @@ use Illuminate\Http\Request;
 
 class OilServiceRecordController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function __construct(
         private readonly OilServiceProjectionCalculator $calculator,
         private readonly OilServiceAlertService $alertService,
@@ -27,9 +30,10 @@ class OilServiceRecordController extends Controller
             'vehicle_id' => ['nullable', 'uuid'],
             'branch_id' => ['nullable', 'uuid'],
         ]);
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
 
         $query = OilServiceRecord::query()
-            ->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id)
+            ->tenant($request->user()->company_id, $branchId)
             ->with('vehicle:id,plate,current_odometer_km');
 
         if (isset($data['vehicle_id'])) {

@@ -23,7 +23,7 @@ class AuthenticateApiToken
             ->whereNull('revoked_at')
             ->first();
 
-        if ($apiToken === null || $apiToken->isExpired()) {
+        if ($apiToken === null || $apiToken->isExpired() || $apiToken->user?->status !== 'ACTIVE') {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 

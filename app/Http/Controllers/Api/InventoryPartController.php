@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryMovement;
 use App\Models\InventoryPart;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryPartController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function index(Request $request): JsonResponse
     {
         return response()->json(
@@ -22,11 +25,12 @@ class InventoryPartController extends Controller
     public function store(Request $request, Auditor $auditor): JsonResponse
     {
         $data = $this->validatedData($request);
-        $part = DB::transaction(function () use ($request, $data, $auditor): InventoryPart {
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
+        $part = DB::transaction(function () use ($request, $data, $auditor, $branchId): InventoryPart {
             $part = InventoryPart::create($data + [
                 'group_id' => $request->user()->group_id,
                 'company_id' => $request->user()->company_id,
-                'branch_id' => $data['branch_id'] ?? $request->user()->branch_id,
+                'branch_id' => $branchId,
             ]);
             if ((float) $part->quantity_on_hand > 0.0) {
                 InventoryMovement::create([
@@ -55,7 +59,11 @@ class InventoryPartController extends Controller
     {
         $part = $this->findScoped($request, $inventoryPart);
         $before = $part->toArray();
-        $part->fill($this->validatedData($request, true));
+        $data = $this->validatedData($request, true);
+        if (array_key_exists('branch_id', $data)) {
+            $data['branch_id'] = $this->resolveBranchId($request->user(), $data['branch_id']);
+        }
+        $part->fill($data);
         $part->save();
         $auditor->recordUpdated($request, $part, $before, 'api.v1.inventory-parts.update');
         return response()->json($part);

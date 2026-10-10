@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Company;
+use App\Models\Branch;
 use App\Models\Group;
 use App\Models\Permission;
 use App\Models\Role;
@@ -15,6 +16,7 @@ class BootstrapTenantCommand extends Command
     protected $signature = 'fleet:bootstrap
         {--group=Grupo Principal}
         {--company=Empresa Principal}
+        {--branch=Matriz}
         {--name=Administrador}
         {--email=admin@example.com}
         {--password=ChangeMe123!}';
@@ -27,6 +29,9 @@ class BootstrapTenantCommand extends Command
         $company = Company::firstOrCreate(
             ['group_id' => $group->id, 'legal_name' => (string) $this->option('company')],
             ['trade_name' => (string) $this->option('company')]
+        );
+        $branch = Branch::firstOrCreate(
+            ['group_id' => $group->id, 'company_id' => $company->id, 'name' => (string) $this->option('branch')]
         );
 
         $permissions = collect([
@@ -53,6 +58,7 @@ class BootstrapTenantCommand extends Command
             [
                 'group_id' => $group->id,
                 'company_id' => $company->id,
+                'branch_id' => $branch->id,
                 'name' => (string) $this->option('name'),
                 'password' => Hash::make((string) $this->option('password')),
                 'status' => 'ACTIVE',
@@ -64,6 +70,7 @@ class BootstrapTenantCommand extends Command
         $this->info('Bootstrap completed.');
         $this->line('Group: '.$group->id);
         $this->line('Company: '.$company->id);
+        $this->line('Branch: '.$branch->id);
         $this->line('Admin: '.$user->email);
 
         return self::SUCCESS;

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use App\Support\Auditor;
@@ -10,6 +11,8 @@ use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function index(Request $request): JsonResponse
     {
         return response()->json(
@@ -20,10 +23,11 @@ class SupplierController extends Controller
     public function store(Request $request, Auditor $auditor): JsonResponse
     {
         $data = $this->validatedData($request);
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
         $supplier = Supplier::create($data + [
             'group_id' => $request->user()->group_id,
             'company_id' => $request->user()->company_id,
-            'branch_id' => $data['branch_id'] ?? $request->user()->branch_id,
+            'branch_id' => $branchId,
         ]);
         $auditor->recordCreated($request, $supplier, 'api.v1.suppliers.store');
         return response()->json($supplier, 201);
@@ -38,7 +42,11 @@ class SupplierController extends Controller
     {
         $model = $this->findScoped($request, $supplier);
         $before = $model->toArray();
-        $model->fill($this->validatedData($request, true));
+        $data = $this->validatedData($request, true);
+        if (array_key_exists('branch_id', $data)) {
+            $data['branch_id'] = $this->resolveBranchId($request->user(), $data['branch_id']);
+        }
+        $model->fill($data);
         $model->save();
         $auditor->recordUpdated($request, $model, $before, 'api.v1.suppliers.update');
         return response()->json($model);

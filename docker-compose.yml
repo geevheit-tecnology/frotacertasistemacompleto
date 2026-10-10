@@ -24,7 +24,7 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: fleet_intelligence
+      POSTGRES_DB: frotacerta_dev
       POSTGRES_USER: fleet
       POSTGRES_PASSWORD: fleet
     ports:

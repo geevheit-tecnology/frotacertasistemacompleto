@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResolvesTenantBranch;
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
 use App\Models\ChecklistExecution;
@@ -26,29 +27,32 @@ use Illuminate\Http\Request;
 
 class MissionControlController extends Controller
 {
+    use ResolvesTenantBranch;
+
     public function show(Request $request): JsonResponse
     {
         $data = $request->validate([
             'branch_id' => ['nullable', 'uuid'],
         ]);
+        $branchId = $this->resolveBranchId($request->user(), $data['branch_id'] ?? null);
 
-        $vehicles = Vehicle::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $alerts = Alert::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $checklists = ChecklistExecution::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $financial = FinancialTransaction::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $fuel = FuelRecord::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $contracts = Contract::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $invoices = Invoice::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $insurancePolicies = InsurancePolicy::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $insights = Insight::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $maintenancePlans = MaintenancePlan::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $nonConformities = NonConformity::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $tachographs = TachographRecord::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $tasks = Task::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $telematics = TelematicsEvent::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $tires = Tire::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $trips = Trip::query()->tenant($request->user()->company_id, $data['branch_id'] ?? $request->user()->branch_id);
-        $vehicleDocuments = VehicleDocument::query()->where('company_id', $request->user()->company_id)->when($data['branch_id'] ?? $request->user()->branch_id, fn ($query, $branchId) => $query->where('branch_id', $branchId));
+        $vehicles = Vehicle::query()->tenant($request->user()->company_id, $branchId);
+        $alerts = Alert::query()->tenant($request->user()->company_id, $branchId);
+        $checklists = ChecklistExecution::query()->tenant($request->user()->company_id, $branchId);
+        $financial = FinancialTransaction::query()->tenant($request->user()->company_id, $branchId);
+        $fuel = FuelRecord::query()->tenant($request->user()->company_id, $branchId);
+        $contracts = Contract::query()->tenant($request->user()->company_id, $branchId);
+        $invoices = Invoice::query()->tenant($request->user()->company_id, $branchId);
+        $insurancePolicies = InsurancePolicy::query()->tenant($request->user()->company_id, $branchId);
+        $insights = Insight::query()->tenant($request->user()->company_id, $branchId);
+        $maintenancePlans = MaintenancePlan::query()->tenant($request->user()->company_id, $branchId);
+        $nonConformities = NonConformity::query()->tenant($request->user()->company_id, $branchId);
+        $tachographs = TachographRecord::query()->tenant($request->user()->company_id, $branchId);
+        $tasks = Task::query()->tenant($request->user()->company_id, $branchId);
+        $telematics = TelematicsEvent::query()->tenant($request->user()->company_id, $branchId);
+        $tires = Tire::query()->tenant($request->user()->company_id, $branchId);
+        $trips = Trip::query()->tenant($request->user()->company_id, $branchId);
+        $vehicleDocuments = VehicleDocument::query()->where('company_id', $request->user()->company_id)->when($branchId, fn ($query, $branchId) => $query->where('branch_id', $branchId));
         $today = CarbonImmutable::today();
 
         return response()->json([

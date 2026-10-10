@@ -18,9 +18,18 @@ class DatabaseSeeder extends Seeder
     {
         $permissions = collect([
             'administration.manage',
-            'fleet.manage',
+            'audit.view',
+            'checklist.manage',
             'documents.manage',
+            'financial.manage',
+            'fleet.manage',
+            'integrations.manage',
+            'maintenance.manage',
             'mission-control.view',
+            'operations.manage',
+            'reports.view',
+            'tires.manage',
+            'workflow.manage',
         ])->mapWithKeys(fn (string $name) => [$name => Permission::firstOrCreate(['name' => $name])]);
 
         $admin = Role::firstOrCreate(['name' => 'ADMIN']);

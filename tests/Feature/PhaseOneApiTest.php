@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ApiToken;
+use App\Models\Branch;
 use App\Models\Company;
 use App\Models\Group;
 use App\Models\Permission;
@@ -145,6 +146,8 @@ class PhaseOneApiTest extends TestCase
         $this->assertTrue($admin->hasPermission('documents.manage'));
         $this->assertTrue($admin->hasPermission('maintenance.manage'));
         $this->assertTrue($admin->hasPermission('mission-control.view'));
+        $this->assertNotNull($admin->branch_id);
+        $this->assertTrue(Branch::query()->whereKey($admin->branch_id)->exists());
     }
 
     /**
