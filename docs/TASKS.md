@@ -14,6 +14,7 @@
 * `TASK-003` - Auditar segurança dos endpoints e RBAC (garantir que não há bypass de roles). **Status**: DONE
 * `TASK-010` - Validar deploy preview com Neon real e variaveis configuradas no provedor. **Status**: TODO
 * `TASK-012` - Ampliar suite de isolamento multiempresa/multifilial por endpoint. **Status**: TODO
+* `TASK-013` - Executar `docs/SPRINT_ERP_FORMS.md` para transformar Mission Control em ERP SaaS com formularios CRUD. **Status**: TODO
 
 ## P2
 *Média prioridade*

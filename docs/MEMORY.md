@@ -32,6 +32,7 @@
 * Manter `vercel.json` sem segredos; `APP_KEY` deve ser configurada fora do repositorio.
 * Manual operacional SaaS em `docs/SAAS_MANUAL.md`.
 * `fleet:bootstrap` cria grupo, empresa, filial inicial e usuario admin.
+* Plano de build dos formularios ERP em `docs/SPRINT_ERP_FORMS.md`.
 
 ## Contexto para futuros agentes
 Você está assumindo o FrotaCerta como um Senior Full-Stack Engineer. A documentação inicial (Audit, Rules, Design System, PRD, Architecture, Tasks) foi preenchida a partir da auditoria. 
