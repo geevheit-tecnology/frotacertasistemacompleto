@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/ts/app.ts'])
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans selection:bg-indigo-500 selection:text-white">
 <main class="min-h-screen flex flex-col" data-app>
@@ -92,6 +92,9 @@
             <button type="button" class="tab-btn relative px-5 py-3 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap" data-tab="reports">
                 Relatórios e Auditoria
             </button>
+            <button type="button" class="tab-btn relative px-5 py-3 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap" data-tab="erp">
+                Cadastros ERP
+            </button>
         </nav>
 
         <div class="relative">
@@ -168,9 +171,67 @@
                     </section>
                 </div>
             </section>
+
+            <!-- ERP Panel -->
+            <section class="tab-panel is-hidden animate-fade-in" data-panel="erp">
+                <div class="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6">
+                    <aside class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 h-max">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Operações</p>
+                        <div class="space-y-2" data-erp-menu></div>
+                    </aside>
+
+                    <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <p class="text-sm font-bold text-indigo-600 tracking-wider uppercase mb-1" data-erp-kicker>ERP SaaS</p>
+                                <h2 class="text-2xl font-bold text-slate-900" data-erp-title>Cadastros</h2>
+                                <p class="text-slate-500 mt-1" data-erp-description>Gerencie os registros operacionais da frota.</p>
+                            </div>
+                            <button type="button" class="bg-slate-900 hover:bg-indigo-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-colors" data-erp-new>
+                                Novo registro
+                            </button>
+                        </div>
+
+                        <div class="p-4 md:p-6">
+                            <div class="flex flex-col md:flex-row gap-3 md:items-center justify-between mb-4">
+                                <input type="search" data-erp-search placeholder="Buscar na tabela" class="w-full md:max-w-sm bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500">
+                                <p class="text-sm text-slate-500" data-erp-count></p>
+                            </div>
+
+                            <div class="overflow-x-auto rounded-xl border border-slate-100">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-xs" data-erp-table-head></thead>
+                                    <tbody class="divide-y divide-slate-100" data-erp-table-body></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </section>
         </div>
     </section>
 </main>
+
+<div class="fixed inset-0 z-50 is-hidden" data-erp-modal>
+    <div class="absolute inset-0 bg-slate-900/40" data-erp-close></div>
+    <div class="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-2xl flex flex-col">
+        <header class="p-6 border-b border-slate-100 flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider" data-erp-form-kicker>Cadastro</p>
+                <h2 class="text-2xl font-bold text-slate-900" data-erp-form-title>Novo registro</h2>
+            </div>
+            <button type="button" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center" data-erp-close aria-label="Fechar">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"></path></svg>
+            </button>
+        </header>
+        <form class="flex-1 overflow-y-auto p-6 space-y-4" data-erp-form></form>
+        <footer class="p-6 border-t border-slate-100 flex items-center justify-end gap-3">
+            <p class="mr-auto text-sm text-red-500 font-medium" data-erp-message></p>
+            <button type="button" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold" data-erp-close>Cancelar</button>
+            <button type="submit" form="erp-generated-form" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-semibold">Salvar</button>
+        </footer>
+    </div>
+</div>
 
 <template data-empty-template>
     <div class="flex flex-col items-center justify-center p-8 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
